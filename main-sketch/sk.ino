@@ -8,7 +8,7 @@ bool sensor_state_for_laser[LASER_COUNT];
 bool isSystemActive = false;
 bool testing_mode = false;
 String laserString;
-
+int threshold = 100;
 
 void debugBlink(int count) {
     for (int i = 0; i < count; ++i) {
@@ -48,9 +48,12 @@ inline void setup_sensor_pins() {
 /// ----------------------------------------
 
 inline bool isSensorLighted(int sensor) {
-	
-	
-    return digitalRead(SENSOR_PINS[sensor]) == HIGH;
+	int windowSize = 100;
+	  long sum = 0;
+	  for (int i = 0; i < windowSize; i++) {
+		sum += analogRead(sensor);
+	  }
+	  return sum / windowSize < threshold;
 }
 
 inline void changeLaserState(int laser, bool state) {
@@ -141,7 +144,11 @@ inline void processCommands() {
 	} else if (cmd == "off"){
 		char laserName = cmd[3];
 		turnLaserOff(getLaserByName(laserName));
-	}
+	} 
+	else if (cmd == 'thresh') {
+		threshold = cmd.substr(6).toInt();
+		Serial.println("Threshold set to" + String(threshold));
+  }
 }
 
 

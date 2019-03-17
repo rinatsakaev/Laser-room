@@ -12,9 +12,11 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QDesktopWidget, QLCDNumbe
 
 CROSSING_RE = re.compile(r'Crossing:')
 
-SERIAL_PORT = 'COM5'  # 'COM*' - windows. '/dev/ttyUSB0' - linux
+SERIAL_PORT = 'COM4'  # 'COM*' - windows. '/dev/ttyUSB0' - linux
 LASERS = b'ABCDEFGH'  # example: b'ABCDEF';  A-L: turn on lasers, a-l: turn off lasers     | See A-L on circuit board
-
+START_CMD = "start"
+END_CMD = "end"
+MAP_CMD = "map"
 
 class TimerWindow(QMainWindow):
     def __init__(self):
@@ -31,7 +33,11 @@ class TimerWindow(QMainWindow):
         listener = threading.Thread(target=self.serial_listener, args=(stop_event, ))
         listener.start()
         while True:
-            cmd = input()  # 2 - debug mode
+            cmd = input()
+            if cmd == "help":
+                print("map [sensors]- запустить маппинг; thresh [val] - поставить порог;\n"
+                      "start; stop - начать/завершить игру; test - дебаг режим; help - помощь")
+                continue
             if not cmd:
                 stop_event.set()
                 break
@@ -51,7 +57,7 @@ class TimerWindow(QMainWindow):
         sleep(2)  # waiting to load
         self.setup_debug_mode()
         self.setup_ports()
-        self.device.write(b'1')  # Activate System
+        self.device.write(bytes(START_CMD))  # Activate System
         print(self.read_serial())
         sleep(2)
         self.setup_timer()  # timer to check crossing every 100ms
@@ -60,9 +66,7 @@ class TimerWindow(QMainWindow):
         return self.device.readline().decode().strip()
 
     def setup_ports(self):
-        self.device.write(b'3')  # enter set up ports mode
-        self.device.write(str(len(LASERS)).rjust(2, '0').encode())  # send number of lazers
-        self.device.write(LASERS)  # send lazers
+        self.device.write("{0} {1}".format(MAP_CMD, LASERS).encode())  # send lazers
         for i in range(len(LASERS) + 2):  # read all info
             print(self.read_serial())
 
@@ -114,7 +118,7 @@ class TimerWindow(QMainWindow):
         self.timer.start()
         self.laser_timer.start()
         self.device.write(LASERS)  # allows continuation
-        self.device.write(b'1')  # activate system
+        self.device.write(bytes(START_CMD))  # activate system
 
     def stop(self):
         self.timer.stop()

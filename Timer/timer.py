@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QDesktopWidget, QLCDNumbe
 
 CROSSING_RE = re.compile(r'Crossing:')
 
-SERIAL_PORT = 'COM4'  # 'COM*' - windows. '/dev/ttyUSB0' - linux
+SERIAL_PORT = 'COM3'  # 'COM*' - windows. '/dev/ttyUSB0' - linux
 LASERS = b'ABCDEFGH'  # example: b'ABCDEF';  A-L: turn on lasers, a-l: turn off lasers     | See A-L on circuit board
 START_CMD = "start"
 END_CMD = "end"

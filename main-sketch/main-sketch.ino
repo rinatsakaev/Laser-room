@@ -160,7 +160,7 @@ inline void processCommands() {
 		char laserName = arg_part[0];
 		turnLaserOff(getLaserByName(laserName));
 		Serial.println("Laser "+String(laserName)+" turned off");
-	} else if (cmd_part == "tr") {
+	} else if (cmd_part == "thresh") {
 		threshold = arg_part.toInt();
 		Serial.println("Threshold set to " + String(threshold));
 	} else {

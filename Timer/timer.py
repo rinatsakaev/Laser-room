@@ -13,7 +13,6 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QDesktopWidget, QLCDNumbe
 CROSSING_RE = re.compile(r'Crossing:')
 
 SERIAL_PORT = 'COM3'  # 'COM*' - windows. '/dev/ttyUSB0' - linux
-LASERS = b'ABCDEFGH'  # example: b'ABCDEF';  A-L: turn on lasers, a-l: turn off lasers     | See A-L on circuit board
 START_CMD = "start"
 END_CMD = "end"
 MAP_CMD = "map"
@@ -66,7 +65,7 @@ class TimerWindow(QMainWindow):
         return self.device.readline().decode().strip()
 
     def setup_ports(self):
-        self.device.write("{0} {1}".format(MAP_CMD, LASERS).encode())  # send lazers
+        self.device.write("{0}".format(MAP_CMD).encode())  # send lazers
         for i in range(len(LASERS) + 2):  # read all info
             print(self.read_serial())
 

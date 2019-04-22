@@ -7,7 +7,6 @@ int sensor_for_laser[LASER_COUNT];
 bool sensor_state_for_laser[LASER_COUNT];
 bool isSystemActive = false;
 bool testing_mode = false;
-String laserString;
 int threshold = 100;
 
 void debugBlink(int count) {
@@ -51,7 +50,7 @@ inline bool isSensorLighted(int sensor) {
 	  int windowSize = 100;
 	  long sum = 0;
 	  for (int i = 0; i < windowSize; i++) {
-		byte val = analogRead(sensor);
+		byte val = analogRead(SENSOR_PINS[sensor]);
 		sum += val;
 	  }
 	  return (sum / windowSize) >= threshold;
@@ -85,33 +84,30 @@ inline void activateSystem() {
 
 /// ----------------------------------------
 inline void findMapping() {
-    int length = laserString.length();
     bool usedSensors[LASER_COUNT];
     for (int i = 0; i < LASER_COUNT; ++i)
         usedSensors[i] = false;
-    int notMatched = length;
+    int notMatched = LASER_COUNT;
     while (notMatched != 0) {
-        for (int i = 0; i < length; ++i) {
-            int laserIndex = getLaserByName(laserString[i]);
-			Serial.println("Laser" + String(laserString[i]) + "is " + String(laserIndex));
-            if (sensor_for_laser[laserIndex] != NO_SENSOR)
+        for (int i = 0; i < LASER_COUNT; ++i) {
+            if (sensor_for_laser[i] != NO_SENSOR)
                 continue;
-            turnLaserOn(laserIndex);
+            turnLaserOn(i);
             for (int sensorIndex = 0; sensorIndex < LASER_COUNT; ++sensorIndex) {
                 delay(2);
                 if (isSensorLighted(sensorIndex) && !usedSensors[sensorIndex]) {
-                    sensor_for_laser[laserIndex] = sensorIndex;
-                    Serial.println("Found " + String(laserString[i]) + " : " + String(sensorIndex));
+					Serial.println("Laser pin " + String(LASER_PINS[i]) + " -> Sensor pin " + String(SENSOR_PINS[sensorIndex]));
+                    sensor_for_laser[i] = sensorIndex;
                     usedSensors[sensorIndex] = true;
                     notMatched--;
                     break;
                 }
             }
-            turnLaserOff(laserIndex);
+            turnLaserOff(i);
         }
     }
-    for (int j = 0; j < length; ++j)
-        turnLaserOn(getLaserByName(laserString[j]));
+    for (int i = 0; i < length; ++i)
+        turnLaserOn(i);
 }
 
 inline void processCommands() {
@@ -149,17 +145,14 @@ inline void processCommands() {
             Serial.println("SetUp Mode Deactivated");
     }
     else if (cmd_part == "map") {
-        laserString += arg_part;
         findMapping();
         Serial.println("Mapping Done!");
     } else if (cmd_part == "on"){
-        char laserName = arg_part[0];
-		turnLaserOn(getLaserByName(laserName));
-		Serial.println("Laser "+String(laserName)+" turned on");
+		turnLaserOn(arg_part[0].toInt());
+		Serial.println("Laser "+arg_part[0]+" turned on");
 	} else if (cmd_part == "off"){
-		char laserName = arg_part[0];
-		turnLaserOff(getLaserByName(laserName));
-		Serial.println("Laser "+String(laserName)+" turned off");
+		turnLaserOff(arg_part[0].toInt());
+		Serial.println("Laser "+arg_part[0]+" turned off");
 	} else if (cmd_part == "thresh") {
 		threshold = arg_part.toInt();
 		Serial.println("Threshold set to " + String(threshold));
@@ -181,13 +174,12 @@ inline void reportLaserCrossing(char laser) {
 // ------------------
 
 inline void lasers_blink(int delay_time, int count) {
-    int length = laserString.length();
     for (int i = 0; i < count; ++i) {
-        for (int j = 0; j < length; ++j)
-            turnLaserOn(getLaserByName(laserString[j]));
+        for (int j = 0; j < LASER_COUNT; ++j)
+            turnLaserOn(j);
         delay(delay_time);
-        for (int j = 0; j < length; ++j)
-            turnLaserOff(getLaserByName(laserString[j]));
+        for (int j = 0; j < LASER_COUNT; ++j)
+            turnLaserOff(j);
         delay(delay_time);
     }
 }
@@ -196,37 +188,28 @@ inline void checkGridStatus() {
     if (testing_mode) {
         Serial.print("+");
         for (int i = 0; i < LASER_COUNT; ++i)
-            if (isSensorLighted(i))
+            if (isSensorLighted(sensor_for_laser[i]))
                 Serial.print(i);
         Serial.print("+   -");
         for (int i = 0; i < LASER_COUNT; ++i)
-            if (!isSensorLighted(i))
+            if (!isSensorLighted(sensor_for_laser[i]))
                 Serial.print(i);
         Serial.println("-");
         delay(2000);
     }
-    int length = laserString.length();
-    for (int j = 0; j < length; ++j) {
-        int laser = getLaserByName(laserString[j]);
-
-        bool sensorIsLighted = isSensorLighted(sensor_for_laser[laser]);
-        if (sensorIsLighted != sensor_state_for_laser[laser])
-            sensor_state_for_laser[laser] = sensorIsLighted;
+    for (int i = 0; i < LASER_COUNT; ++i) {
+        bool sensorIsLighted = isSensorLighted(sensor_for_laser[i]);
+        if (sensorIsLighted != sensor_state_for_laser[i])
+            sensor_state_for_laser[i] = sensorIsLighted;
 
         if (isSystemActive && !sensorIsLighted) {
-            reportLaserCrossing(laser);
+            reportLaserCrossing(i);
             lasers_blink(250, 5);
             clearState();
             Serial.println("System Deactivated");
             return;
         }
     }
-}
-
-inline int getLaserByName(char name){
-	String name_str = String(name);
-	name_str.toLowerCase();
-	return name_str[0] - 'a';
 }
 
 void setup() {

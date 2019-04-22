@@ -1,5 +1,5 @@
 const int LASER_COUNT = 8;
-const int LASER_PINS[LASER_COUNT]  = {2, 3, 4, 5, 6, 7, 8, 9};
+const int LASER_PINS[LASER_COUNT]  = {6, 7, 8, 9, 10, 11, 12, 13};
 const int SENSOR_PINS[LASER_COUNT] = {A0, A1, A2, A3, A4, A5, A6, A7};
 const int NO_SENSOR = -1;
 
